@@ -86,7 +86,47 @@ public class Main {
     }
 
     static void makeMove(){
-        
+        if (x < goalX){
+            String ask = ASK(x+1,y);
+            switch (ask){
+                case "yes":
+                    break;
+                case "no":
+                    break;
+                case "uncertian":
+                    break;
+            }
+        } else if (x > goalX){
+            String ask = ASK(x-1,y);
+            switch (ask){
+                case "yes":
+                    break;
+                case "no":
+                    break;
+                case "uncertian":
+                    break;
+            }
+        } else if (y < goalY){
+            String ask = ASK(x,y+1);
+            switch (ask){
+                case "yes":
+                    break;
+                case "no":
+                    break;
+                case "uncertian":
+                    break;
+            }
+        } else if (y > goalY) {
+            String ask = ASK(x,y-1);
+            switch (ask){
+                case "yes":
+                    break;
+                case "no":
+                    break;
+                case "uncertian":
+                    break;
+            }
+        }
     }
 
     static void actuator(String action){
@@ -169,64 +209,86 @@ public class Main {
         for (int i = 0; i < width; i++){
             for (int j = 0; j < height; j++){
                 if (!explored[i][j]) continue;
-                int smellyCnt = 0;
-                int wX = 0;
-                int wY = 0;
+                if (KB[i][j][0]=="Breezy"){
+                    int pitCount = 0;
+                    int pitX=0;
+                    int pitY=0;
+                    if (i-1 > 0){
+                        if (P[i-1][j]=="yes") pitCount = 2;
+                        if (P[i-1][j]==null) {
+                            pitCount++;
+                            pitX = i-1;
+                            pitY = j;
+                        }
+                    }
+                    if (i+1 < width){
+                        if (P[i+1][j]=="yes") pitCount = 2;;
+                        if (P[i+1][j]==null) {
+                            pitCount++;
+                            pitX = i+1;
+                            pitY = j;
+                        }
+                    }
+                    if (j-1 > 0){
+                        if (P[i][j-1]=="yes") pitCount = 2;;
+                        if (P[i][j-1]==null) {
+                            pitCount++;
+                            pitX = i;
+                            pitY = j-1;
+                        }
+                    }
+                    if (j+1 < height){
+                        if (P[i][j+1]=="yes") pitCount = 2;;
+                        if (P[i][j+1]==null) {
+                            pitCount++;
+                            pitX = i;
+                            pitY = j+1;
+                        }
+                    }
+                    if (pitCount==1) P[pitX][pitY] = "yes";
 
-                int breezyCnt = 0;
-                int pX = 0;
-                int pY = 0;
-
-                if (i-1 > 0){
-                    if (W[i-1][j] == null && KB[i-1][j][1] == "Smelly"){
-                        smellyCnt++;
-                        wX = i-1;
-                        wY = j;
-                    }
-                    if (P[i-1][j] == null && KB[i-1][j][0] == "Breezy"){
-                        breezyCnt++;
-                        pX = i-1;
-                        pY = j;
-                    }
-                }
-                if (i+1 < width){
-                    if (W[i+1][j] == null && KB[i+1][j][1] == "Smelly"){
-                        smellyCnt++;
-                        wX = i+1;
-                        wY = j;
-                    }
-                    if (P[i+1][j] == null && KB[i+1][j][0] == "Breezy"){
-                        breezyCnt++;
-                        pX = i+1;
-                        pY = j;
-                    }
-                }
-                if (j-1 > 0){
-                    if (W[i][j-1] == null && KB[i][j-1][1] == "Smelly"){
-                        smellyCnt++;
-                        wX = i;
-                        wY = j-1;
-                    }
-                    if (P[i][j-1] == null && KB[i][j-1][0] == "Breezy"){
-                        breezyCnt++;
-                        pX = i;
-                        pY = j-1;
-                    }
-                }
-                if (j+1 < height){
-                    if (W[i][j+1] == null && KB[i][j+1][1] == "Smelly"){
-                        smellyCnt++;
-                        wX = i;
-                        wY = j+1;
-                    }
-                    if (P[i][j+1] == null && KB[i][j+1][0] == "Breezy"){
-                        breezyCnt++;
-                        pX = i;
-                        pY = j+1;
+                    if (KB[i][j][0]=="Smelly") {
+                        int wCount = 0;
+                        int wX = 0;
+                        int wY = 0;
+                        if (i - 1 > 0) {
+                            if (W[i - 1][j] == "yes") wCount = 2;
+                            if (W[i - 1][j] == null) {
+                                wCount++;
+                                wX = i - 1;
+                                wY = j;
+                            }
+                        }
+                        if (i + 1 < width) {
+                            if (W[i + 1][j] == "yes") wCount = 2;
+                            ;
+                            if (W[i + 1][j] == null) {
+                                wCount++;
+                                wX = i + 1;
+                                wY = j;
+                            }
+                        }
+                        if (j - 1 > 0) {
+                            if (W[i][j - 1] == "yes") wCount = 2;
+                            ;
+                            if (W[i][j - 1] == null) {
+                                wCount++;
+                                wX = i;
+                                wY = j - 1;
+                            }
+                        }
+                        if (j + 1 < height) {
+                            if (W[i][j + 1] == "yes") wCount = 2;
+                            ;
+                            if (W[i][j + 1] == null) {
+                                wCount++;
+                                wX = i;
+                                wY = j + 1;
+                            }
+                        }
+                        if (wCount == 1) W[pitX][pitY] = "yes";
                     }
                 }
-                if (smellyCnt == 1) W[wX][wY] = "yes";
-                if (breezyCnt == 1) P[pX][pY] = "yes";
             }
         }
     }
