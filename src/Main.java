@@ -61,8 +61,10 @@ public class Main {
             for (int i = 0; i < width; i++)
                 for (int j = 0; j < height; j++) {
                     explored[i][j] = false;
-                    costs[i][j] = Math.abs(i-goalX)+Math.abs(j-goalY);
+                    costs[i][j] = Integer.MAX_VALUE;
                 }
+            costs[x][y] = Math.abs(goalX-x)+Math.abs(goalY-y);
+            costs[goalX][goalY] = 0;
             explored[x][y] = true;
             for (String s: data) {
                 if (s.length() < 4){
@@ -88,15 +90,17 @@ public class Main {
         }
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                System.out.print(map[i][j] + ", ");
+                System.out.print(map[j][height-1-i] + ", ");
             }
             System.out.println();
         }
         Tell(x,y);
+        traversal();
+        System.out.println(trace);
     }
 
-    public void traversal(){
-        if (x == goalX && y == goalY) return;
+    public static void traversal(){
+        if (x == goalX && y == goalY || lose) return;
         int costRight = Integer.MAX_VALUE;
         int costLeft = Integer.MAX_VALUE;
         int costUp = Integer.MAX_VALUE;
@@ -110,7 +114,6 @@ public class Main {
                 case "no":
                     break;
                 case "uncertian":
-                    costLeft = costLeft/2;
                     break;
             }
         }
@@ -123,7 +126,6 @@ public class Main {
                 case "no":
                     break;
                 case "uncertian":
-                    costRight = costRight/2;
                     break;
             }
         }
@@ -136,7 +138,6 @@ public class Main {
                 case "no":
                     break;
                 case "uncertian":
-                    costDown = costDown/2;
                     break;
             }
         }
@@ -149,18 +150,28 @@ public class Main {
                 case "no":
                     break;
                 case "uncertian":
-                    costUp = costUp/2;
                     break;
             }
         }
         if (costRight == costLeft &&
                 costLeft == costDown &&
                 costDown == costUp &&
-                (costRight == Integer.MAX_VALUE  || costRight == Integer.MAX_VALUE/2)){
+                (costRight == Integer.MAX_VALUE)){
             ArrayList<String> backtrack = new ArrayList<>(trace);
             Collections.reverse(backtrack);
             while (true) {
-                actuator(backtrack.remove(0));
+                String act = "";
+                while (act != "Forward"){
+                    act = backtrack.remove(0);
+                    if (act == "RightTurn"){
+                        act = "LeftTurn";
+                    } else if (act == "LeftTurn"){
+                        act = "RightTurn";
+                    }
+                }
+                actuator("RightTurn");
+                actuator("RightTurn");
+                actuator(act);
                 int cRight = Integer.MAX_VALUE;
                 int cLeft = Integer.MAX_VALUE;
                 int cUp = Integer.MAX_VALUE;
@@ -174,7 +185,6 @@ public class Main {
                         case "no":
                             break;
                         case "uncertian":
-                            cLeft = cLeft/2;
                             break;
                     }
                 }
@@ -187,7 +197,6 @@ public class Main {
                         case "no":
                             break;
                         case "uncertian":
-                            cRight = cRight/2;
                             break;
                     }
                 }
@@ -200,7 +209,6 @@ public class Main {
                         case "no":
                             break;
                         case "uncertian":
-                            cDown = cDown/2;
                             break;
                     }
                 }
@@ -213,14 +221,13 @@ public class Main {
                         case "no":
                             break;
                         case "uncertian":
-                            cUp = cUp/2;
                             break;
                     }
                 }
                 if (!(cRight == cLeft &&
                         cLeft == cDown &&
                         cDown == cUp &&
-                        (cRight == Integer.MAX_VALUE  || cRight == Integer.MAX_VALUE/2))) {
+                        cRight == Integer.MAX_VALUE)) {
                     String action;
                     if (cRight <= cLeft && cRight <= cUp && cRight <= cDown) action = "Right";
                     else if (cLeft <= cRight && cLeft <= cUp && cLeft <= cDown) action = "Left";
@@ -332,7 +339,7 @@ public class Main {
                         actuator("Forward");
                     }
                     break;
-                case "up":
+                case "Up":
                     if (direction == 1){
                         actuator("LeftTurn");
                         actuator("Forward");
@@ -396,27 +403,29 @@ public class Main {
                         return;
                     }
                 } else if (direction == 2){
-                    y--;
+                    y++;
                     if (y < 0){
-                        y++;
+                        y--;
                         return;
                     }
                 } else {
-                    y++;
+                    y--;
                     if (y >= height){
-                        y--;
+                        y++;
                         return;
                     }
                 }
                 if (!explored[x][y]){
                     explored[x][y] = true;
-                    Tell(x,y);
+
                 }
+                Tell(x,y);
                 score--;
                 if (map[x][y] == null){
                     W[x][y] = "no";
                     P[x][y] = "no";
                 } else if (map[x][y].contains("W") || map[x][y].contains("P")){
+                    System.out.println("Game over!");
                     score -= 1000;
                     lose = true;
                 } else if (map[x][y].contains("Y")){
@@ -437,19 +446,25 @@ public class Main {
         }
     }
     static void Tell(int x, int y){
-        if (map[x][y].contains("B")) KB[x][y][0]="Breezy";
+        if (map[x][y] != null && map[x][y].contains("B")) KB[x][y][0]="Breezy";
         else {
             if (x-1 > 0) P[x-1][y] = "no";
-            if (x+1 > 0) P[x+1][y] = "no";
+            if (x+1 < width) P[x+1][y] = "no";
             if (y-1 > 0) P[x][y-1] = "no";
-            if (y+1 > 0) P[x][y+1] = "no";
+            if (y+1 < height) P[x][y+1] = "no";
         }
-        if (map[x][y].contains("S")) KB[x][y][1]="Smelly";
+        if (map[x][y] != null && map[x][y].contains("S")) KB[x][y][1]="Smelly";
         else {
             if (x-1 > 0) W[x-1][y] = "no";
-            if (x+1 > 0) W[x+1][y] = "no";
+            if (x+1 < width) W[x+1][y] = "no";
             if (y-1 > 0) W[x][y-1] = "no";
-            if (y+1 > 0) W[x][y+1] = "no";
+            if (y+1 < height) W[x][y+1] = "no";
+        }
+        if (map[x][y] == null || !map[x][y].contains("S") && !map[x][y].contains("B")){
+            if (x-1 > 0) costs[x-1][y] = Math.abs(goalX-x+1)+Math.abs(goalY-y);
+            if (x+1 < width) costs[x+1][y] = Math.abs(goalX-x-1)+Math.abs(goalY-y);
+            if (y-1 > 0) costs[x][y-1] = Math.abs(goalX-x)+Math.abs(goalY-y+1);
+            if (y+1 < height) costs[x][y+1] = Math.abs(goalX-x)+Math.abs(goalY-y-1);
         }
         for (int i = 0; i < width; i++){
             for (int j = 0; j < height; j++){
@@ -492,7 +507,6 @@ public class Main {
                     }
                     if (pitCount==1){
                         P[pitX][pitY] = "yes";
-                        costs[pitX][pitY] = Integer.MAX_VALUE;
                     }
 
                     if (KB[i][j][0]=="Smelly") {
@@ -527,7 +541,6 @@ public class Main {
                         }
                         if (j + 1 < height) {
                             if (W[i][j + 1] == "yes") wCount = 2;
-                            ;
                             if (W[i][j + 1] == null) {
                                 wCount++;
                                 wX = i;
@@ -536,12 +549,13 @@ public class Main {
                         }
                         if (wCount == 1){
                             W[wX][wY] = "yes";
-                            costs[wX][wY] = Integer.MAX_VALUE;
                         }
                     }
                 }
             }
         }
+        for (int i = 0; i < width; i++)
+            for (int j = 0; j < height; j++) if (W[i][j] == "no" && P[i][j] == "no") costs[i][j] = Math.abs(goalX-i)+Math.abs(goalY-j);
     }
     static String ASK(int x,int y){
         if (P[x][y]=="yes" || W[x][y]=="yes") return "no";
