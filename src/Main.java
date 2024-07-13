@@ -28,7 +28,7 @@ public class Main {
     static ArrayList<String> trace = new ArrayList<>();
     public static void main(String[] args) {
         ArrayList<String> t = new ArrayList<>();
-        String filePath = "wumpus_world.txt";
+        String filePath = "ww2.txt";
         BufferedReader reader = null;
         try {
             FileReader fileReader = new FileReader(filePath);
@@ -95,12 +95,20 @@ public class Main {
             System.out.println();
         }
         Tell(x,y);
+        System.out.println("X: "+x+", Y: "+y);
         traversal();
         System.out.println(trace);
+        System.out.println(explored[1][2]);
     }
 
     public static void traversal(){
-        if (x == goalX && y == goalY || lose) return;
+        if (x == goalX && y == goalY) {
+            System.out.println("The aget reached the exit.");
+            return;
+        } else if (lose){
+            System.out.println("The agent died :(");
+            return;
+        }
         int costRight = Integer.MAX_VALUE;
         int costLeft = Integer.MAX_VALUE;
         int costUp = Integer.MAX_VALUE;
@@ -153,25 +161,25 @@ public class Main {
                     break;
             }
         }
-        if (costRight == costLeft &&
-                costLeft == costDown &&
-                costDown == costUp &&
-                (costRight == Integer.MAX_VALUE)){
+        if (costRight == costLeft && costLeft == costDown && costDown == costUp && (costRight == Integer.MAX_VALUE)){
             ArrayList<String> backtrack = new ArrayList<>(trace);
             Collections.reverse(backtrack);
             while (true) {
-                String act = "";
-                while (act != "Forward"){
-                    act = backtrack.remove(0);
-                    if (act == "RightTurn"){
-                        act = "LeftTurn";
-                    } else if (act == "LeftTurn"){
-                        act = "RightTurn";
+                String act = backtrack.remove(0);
+                while (act != "Forward" && act != "LeftTurn" && act != "RightTurn") act = backtrack.remove(0);
+                if (act == "Forward"){
+                    if (backtrack.size()+1 == trace.size()){
+                        actuator("RightTurn");
+                        actuator("RightTurn");
+                        actuator("Forward");
+                    } else {
+                        actuator("Forward");
                     }
+                } else if (act == "RightTurn"){
+                    actuator("LeftTurn");
+                } else if (act == "LeftTurn"){
+                    actuator("RightTurn");
                 }
-                actuator("RightTurn");
-                actuator("RightTurn");
-                actuator(act);
                 int cRight = Integer.MAX_VALUE;
                 int cLeft = Integer.MAX_VALUE;
                 int cUp = Integer.MAX_VALUE;
@@ -415,10 +423,8 @@ public class Main {
                         return;
                     }
                 }
-                if (!explored[x][y]){
-                    explored[x][y] = true;
-
-                }
+                System.out.println("X: "+x+", Y: "+y);
+                if (!explored[x][y]) explored[x][y] = true;
                 Tell(x,y);
                 score--;
                 if (map[x][y] == null){
@@ -442,6 +448,33 @@ public class Main {
                 break;
             case "Shoot":
                 score -= 100;
+                if (direction == 1){
+                    int xArrow = x;
+                    while (xArrow < width){
+                        W[xArrow][y] = "no";
+                        xArrow++;
+                    }
+                } else if (direction == 2){
+                    int yArrow = y;
+                    while (yArrow < height){
+                        W[x][yArrow] = "no";
+                        yArrow++;
+                    }
+                } else if (direction == -1) {
+                    int xArrow = x;
+                    while (xArrow >= 0){
+                        W[xArrow][y] = "no";
+                        xArrow--;
+                    }
+                } else {
+                    int yArrow = y;
+                    while (yArrow >= 0){
+                        W[x][yArrow] = "no";
+                        yArrow--;
+                    }
+                }
+                for (int i = 0; i < width; i++)
+                    for (int j = 0; j < height; j++) if (W[i][j] == "no" && P[i][j] == "no") costs[i][j] = Math.abs(goalX-i)+Math.abs(goalY-j);
                 break;
         }
     }
