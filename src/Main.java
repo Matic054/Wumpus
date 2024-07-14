@@ -28,7 +28,7 @@ public class Main {
     static ArrayList<String> trace = new ArrayList<>();
     public static void main(String[] args) {
         ArrayList<String> t = new ArrayList<>();
-        String filePath = "wumpus_world.txt";
+        String filePath = "wumpus_world2.txt";
         BufferedReader reader = null;
         try {
             FileReader fileReader = new FileReader(filePath);
@@ -100,6 +100,8 @@ public class Main {
             System.out.println();
         }
         Tell(x,y);
+        W[x][y] = "no";
+        P[x][y] = "no";
         System.out.println("Agent is at field ("+x+", "+y+")");
         traversal();
         System.out.println();
@@ -120,7 +122,7 @@ public class Main {
         int costLeft = Integer.MAX_VALUE;
         int costUp = Integer.MAX_VALUE;
         int costDown = Integer.MAX_VALUE;
-        if (x-1 > 0) {
+        if (x-1 >= 0) {
             switch (ASK(x-1,y)){
                 case "yes":
                     costLeft = costs[x-1][y];
@@ -144,7 +146,7 @@ public class Main {
                     break;
             }
         }
-        if (y-1 > 0) {
+        if (y-1 >= 0) {
             switch (ASK(x,y-1)){
                 case "yes":
                     costDown = costs[x][y-1];
@@ -191,7 +193,7 @@ public class Main {
                 int cLeft = Integer.MAX_VALUE;
                 int cUp = Integer.MAX_VALUE;
                 int cDown = Integer.MAX_VALUE;
-                if (x-1 > 0) {
+                if (x-1 >= 0) {
                     switch (ASK(x-1,y)){
                         case "yes":
                             cLeft = costs[x-1][y];
@@ -215,7 +217,7 @@ public class Main {
                             break;
                     }
                 }
-                if (y-1 > 0) {
+                if (y-1 >= 0) {
                     switch (ASK(x,y-1)){
                         case "yes":
                             cDown = costs[x][y-1];
@@ -419,13 +421,13 @@ public class Main {
                     }
                 } else if (direction == 2){
                     y++;
-                    if (y < 0){
+                    if (y > height){
                         y--;
                         return;
                     }
                 } else {
                     y--;
-                    if (y >= height){
+                    if (y < 0){
                         y++;
                         return;
                     }
@@ -434,10 +436,8 @@ public class Main {
                 if (!explored[x][y]) explored[x][y] = true;
                 Tell(x,y);
                 score--;
-                if (map[x][y] == null){
-                    W[x][y] = "no";
-                    P[x][y] = "no";
-                } else if (map[x][y].contains("W") || map[x][y].contains("P")){
+                if (map[x][y] != null)
+                if (map[x][y].contains("W") || map[x][y].contains("P")){
                     System.out.println("Game over!");
                     score -= 1000;
                     lose = true;
@@ -497,24 +497,24 @@ public class Main {
             System.out.println("Breeze sensed");
             KB[x][y][0]="Breezy";
         } else {
-            if (x-1 > 0) P[x-1][y] = "no";
+            if (x-1 >= 0) P[x-1][y] = "no";
             if (x+1 < width) P[x+1][y] = "no";
-            if (y-1 > 0) P[x][y-1] = "no";
+            if (y-1 >= 0) P[x][y-1] = "no";
             if (y+1 < height) P[x][y+1] = "no";
         }
         if (map[x][y] != null && map[x][y].contains("S")) {
             System.out.println("Smell sensed");
             KB[x][y][1]="Smelly";
         } else {
-            if (x-1 > 0) W[x-1][y] = "no";
+            if (x-1 >= 0) W[x-1][y] = "no";
             if (x+1 < width) W[x+1][y] = "no";
-            if (y-1 > 0) W[x][y-1] = "no";
+            if (y-1 >= 0) W[x][y-1] = "no";
             if (y+1 < height) W[x][y+1] = "no";
         }
-        if (map[x][y] == null || !map[x][y].contains("S") && !map[x][y].contains("B")){
-            if (x-1 > 0) costs[x-1][y] = Math.abs(goalX-x+1)+Math.abs(goalY-y);
+        if (map[x][y] == null || (!map[x][y].contains("S") && !map[x][y].contains("B"))){
+            if (x-1 >= 0) costs[x-1][y] = Math.abs(goalX-x+1)+Math.abs(goalY-y);
             if (x+1 < width) costs[x+1][y] = Math.abs(goalX-x-1)+Math.abs(goalY-y);
-            if (y-1 > 0) costs[x][y-1] = Math.abs(goalX-x)+Math.abs(goalY-y+1);
+            if (y-1 >= 0) costs[x][y-1] = Math.abs(goalX-x)+Math.abs(goalY-y+1);
             if (y+1 < height) costs[x][y+1] = Math.abs(goalX-x)+Math.abs(goalY-y-1);
         }
         for (int i = 0; i < width; i++){
@@ -524,7 +524,7 @@ public class Main {
                     int pitCount = 0;
                     int pitX=0;
                     int pitY=0;
-                    if (i-1 > 0){
+                    if (i-1 >= 0){
                         if (P[i-1][j]=="yes") pitCount = 2;
                         if (P[i-1][j]==null) {
                             pitCount++;
@@ -540,7 +540,7 @@ public class Main {
                             pitY = j;
                         }
                     }
-                    if (j-1 > 0){
+                    if (j-1 >= 0){
                         if (P[i][j-1]=="yes") pitCount = 2;;
                         if (P[i][j-1]==null) {
                             pitCount++;
@@ -562,9 +562,9 @@ public class Main {
                     }
 
                     if (foundWumpus) continue;
-                    if (KB[i][j][0]=="Smelly") {
-                        if (i+2 < width){
-                            if (KB[i+2][j][0] == "Smelly"){
+                    if (KB[i][j][1]=="Smelly") {
+                        /*if (i+2 < width){
+                            if (KB[i+2][j][1] == "Smelly"){
                                 W[i+1][j]="yes";
                                 System.out.println("Found out Wumpus is on field ("+(i+1)+", "+j+")");
                                 foundWumpus = true;
@@ -574,8 +574,8 @@ public class Main {
                                 break;
                             }
                         }
-                        if (i-2 > 0){
-                            if (KB[i-2][j][0] == "Smelly"){
+                        if (i-2 >= 0){
+                            if (KB[i-2][j][1] == "Smelly"){
                                 W[i-1][j]="yes";
                                 System.out.println("Found out Wumpus is on field ("+(i-1)+", "+j+")");
                                 foundWumpus = true;
@@ -586,7 +586,7 @@ public class Main {
                             }
                         }
                         if (j+2 < height){
-                            if (KB[i][j+2][0] == "Smelly"){
+                            if (KB[i][j+2][1] == "Smelly"){
                                 W[i][j+1]="yes";
                                 System.out.println("Found out Wumpus is on field ("+i+", "+(j+1)+")");
                                 foundWumpus = true;
@@ -596,8 +596,8 @@ public class Main {
                                 break;
                             }
                         }
-                        if (j-2 > 0){
-                            if (KB[i][j-2][0] == "Smelly"){
+                        if (j-2 >= 0){
+                            if (KB[i][j-2][1] == "Smelly"){
                                 W[i][j-1]="yes";
                                 System.out.println("Found out Wumpus is on field ("+i+", "+(j-1)+")");
                                 foundWumpus = true;
@@ -608,39 +608,39 @@ public class Main {
                             }
                         }
                         if (i+1 < width && j+1 < height){
-                            if (KB[i+1][j+1][0] == "Smelly"){
+                            if (KB[i+1][j+1][1] == "Smelly"){
                                 for (int X = 0; X < width; X++)
                                     for (int Y = 0; Y < height; Y++)
                                         if ((X != i+1 || Y != j) && (X != i || Y != j+1)) W[X][Y]="no";
                             }
                         }
-                        if (i+1 < width && j-1 > 0){
-                            if (KB[i+1][j-1][0] == "Smelly"){
+                        if (i+1 < width && j-1 >= 0){
+                            if (KB[i+1][j-1][1] == "Smelly"){
                                 for (int X = 0; X < width; X++)
                                     for (int Y = 0; Y < height; Y++)
                                         if ((X != i+1 || Y != j) && (X != i || Y != j-1)) W[X][Y]="no";
                             }
                         }
-                        if (i-1 > 0 && j+1 < height){
-                            if (KB[i-1][j+1][0] == "Smelly"){
+                        if (i-1 >= 0 && j+1 < height){
+                            if (KB[i-1][j+1][1] == "Smelly"){
                                 for (int X = 0; X < width; X++)
                                     for (int Y = 0; Y < height; Y++)
                                         if ((X != i-1 || Y != j) && (X != i || Y != j+1)) W[X][Y]="no";
                             }
                         }
-                        if (i-1 > 0 && j-1 > 0){
-                            if (KB[i-1][j-1][0] == "Smelly"){
+                        if (i-1 >= 0 && j-1 >= 0){
+                            if (KB[i-1][j-1][1] == "Smelly"){
                                 for (int X = 0; X < width; X++)
                                     for (int Y = 0; Y < height; Y++)
                                         if ((X != i+1 || Y != j) && (X != i || Y != j+1)) W[X][Y]="no";
                             }
-                        }
+                        }*/
 
                         int wCount = 0;
                         int wX = 0;
                         int wY = 0;
-                        if (i - 1 > 0) {
-                            if (W[i - 1][j] == "yes") wCount = 2;
+                        if (i - 1 >= 0) {
+                            //if (W[i - 1][j] == "yes") wCount = 2;
                             if (W[i - 1][j] == null) {
                                 wCount++;
                                 wX = i - 1;
@@ -648,15 +648,15 @@ public class Main {
                             }
                         }
                         if (i + 1 < width) {
-                            if (W[i + 1][j] == "yes") wCount = 2;
+                            //if (W[i + 1][j] == "yes") wCount = 2;
                             if (W[i + 1][j] == null) {
                                 wCount++;
                                 wX = i + 1;
                                 wY = j;
                             }
                         }
-                        if (j - 1 > 0) {
-                            if (W[i][j - 1] == "yes") wCount = 2;
+                        if (j - 1 >= 0) {
+                            //if (W[i][j - 1] == "yes") wCount = 2;
                             if (W[i][j - 1] == null) {
                                 wCount++;
                                 wX = i;
@@ -664,7 +664,7 @@ public class Main {
                             }
                         }
                         if (j + 1 < height) {
-                            if (W[i][j + 1] == "yes") wCount = 2;
+                            //if (W[i][j + 1] == "yes") wCount = 2;
                             if (W[i][j + 1] == null) {
                                 wCount++;
                                 wX = i;
@@ -672,12 +672,18 @@ public class Main {
                             }
                         }
                         if (wCount == 1 && W[wX][wY] != "yes"){
+                            if (x == 1 && y == 2 && i == 1 && j == 2){
+                                System.out.println("Left: "+W[i-1][j]);
+                                System.out.println("Right: "+W[i+1][j]);
+                                System.out.println("Up: "+W[i][j+1]);
+                                System.out.println("Down: "+W[i][j-1]);
+                            }
                             System.out.println("Found out Wumpus is on field ("+wX+", "+wY+")");
-                            W[wX][wY] = "yes";
-                            foundWumpus = true;
                             for (int X = 0; X < width; X++)
                                 for (int Y = 0; Y < height; Y++)
-                                    if (X != wX || Y != wY) W[X][Y] = "no";
+                                    W[X][Y] = "no";
+                            W[wX][wY] = "yes";
+                            foundWumpus = true;
                             break;
                         }
                     }
