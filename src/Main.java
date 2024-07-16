@@ -28,7 +28,7 @@ public class Main {
     static ArrayList<String> trace = new ArrayList<>();
     public static void main(String[] args) {
         ArrayList<String> t = new ArrayList<>();
-        String filePath = "wumpus_world3.txt";
+        String filePath = "wumpus_world.txt";
         BufferedReader reader = null;
         try {
             FileReader fileReader = new FileReader(filePath);
@@ -104,7 +104,9 @@ public class Main {
 
         for (int j = height-1; j >= 0; j--) {
             for (int i = 0; i < width; i++) {
-                if (map[i][j] != null && map[i][j].contains("W"))
+                if (i==x && j == y)
+                    System.out.print(" A ");
+                else if (map[i][j] != null && map[i][j].contains("W"))
                     System.out.print(" W ");
                 else if (map[i][j] != null && map[i][j].contains("P"))
                     System.out.print(" P ");
@@ -116,6 +118,22 @@ public class Main {
                     System.out.print(" Y ");
                 else
                     System.out.print(" _ ");
+            }
+            System.out.println();
+        }
+
+        System.out.println(foundWumpus);
+
+        for (int j = height-1; j >= 0; j--) {
+            for (int i = 0; i < width; i++) {
+                if (W[i][j] != null && W[i][j]=="yes")
+                    System.out.print(" W ");
+                else if (W[i][j] != null && W[i][j]=="no")
+                    System.out.print(" X ");
+                else if (W[i][j] == "uncertian")
+                    System.out.print(" ? ");
+                else
+                    System.out.println(" _ ");
             }
             System.out.println();
         }
@@ -182,14 +200,57 @@ public class Main {
                     break;
             }
         }
+
+        if (costRight == costLeft && costLeft == costDown && costDown == costUp && (costRight == Integer.MAX_VALUE) && foundWumpus && !shotArrow) {
+            int wX = 0;
+            int wY = 0;
+            for (int i = 0; i < width; i++)
+                for (int j = 0; j < height; j++)
+                    if (W[i][j] == "yes") {
+                        wX = i;
+                        wY = j;
+                        break;
+                    }
+            if (wX == x) {
+                int wDir = 2;
+                if (wY > y) {
+                    wDir = 2;
+                } else if (wY < y) {
+                    wDir = -2;
+                }
+                while (direction != wDir) actuator("RightTurn");
+                actuator("Shoot");
+                if (W[wX][wY] == "no") costs[wX][wY] = Math.abs(goalX - wX) + Math.abs(goalY - wY);
+                if (wY == y + 1) costUp = costs[wX][wY];
+                else if (wY == y - 1) costDown = costs[wX][wY];
+            } else if (wY == y) {
+                int wDir = 1;
+                if (wX > x) {
+                    wDir = 1;
+                } else if (wX < x) {
+                    wDir = -1;
+                }
+                while (direction != wDir) actuator("RightTurn");
+                actuator("Shoot");
+                if (W[wX][wY] == "no") costs[wX][wY] = Math.abs(goalX - wX) + Math.abs(goalY - wY);
+                if (wX == x + 1) costRight = costs[wX][wY];
+                else if (wX == x - 1) costLeft = costs[wX][wY];
+            }
+        }
+
         if (costRight == costLeft && costLeft == costDown && costDown == costUp && (costRight == Integer.MAX_VALUE)){
+            System.out.println("Started backtracking");
             ArrayList<String> backtrack = new ArrayList<>(trace);
             Collections.reverse(backtrack);
+            boolean firstForward = true;
             while (true) {
                 String act = backtrack.remove(0);
-                while (act != "Forward" && act != "LeftTurn" && act != "RightTurn") act = backtrack.remove(0);
+                while (act != "Forward" && act != "LeftTurn" && act != "RightTurn") {
+                    act = backtrack.remove(0);
+                }
                 if (act == "Forward"){
-                    if (backtrack.size()+1 == trace.size()){
+                    if (firstForward){
+                        firstForward=false;
                         actuator("RightTurn");
                         actuator("RightTurn");
                         actuator("Forward");
@@ -257,6 +318,7 @@ public class Main {
                         cLeft == cDown &&
                         cDown == cUp &&
                         cRight == Integer.MAX_VALUE)) {
+                    System.out.println("Stoped backtracking");
                     String action;
                     if (cRight <= cLeft && cRight <= cUp && cRight <= cDown) action = "Right";
                     else if (cLeft <= cRight && cLeft <= cUp && cLeft <= cDown) action = "Left";
@@ -444,14 +506,36 @@ public class Main {
                     }
                 }
                 System.out.println("Move to field ("+x+", "+y+")");
+                if (y > height-1) System.out.println(trace);
+                for (int j = height-1; j >= 0; j--) {
+                    for (int i = 0; i < width; i++) {
+                        if (i==x && j == y)
+                            System.out.print(" A ");
+                        else if (map[i][j] != null && map[i][j].contains("W"))
+                            System.out.print(" W ");
+                        else if (map[i][j] != null && map[i][j].contains("P"))
+                            System.out.print(" P ");
+                        else if (map[i][j] != null && map[i][j].contains("B"))
+                            System.out.print(" B ");
+                        else if (i == goalX && j == goalY)
+                            System.out.print(" G ");
+                        else if (map[i][j] != null && map[i][j].contains("Y"))
+                            System.out.print(" Y ");
+                        else
+                            System.out.print(" _ ");
+                    }
+                    System.out.println();
+                }
                 if (!explored[x][y]) explored[x][y] = true;
                 Tell(x,y);
                 score--;
                 if (map[x][y] != null)
                 if (map[x][y].contains("W") || map[x][y].contains("P")){
-                    System.out.println("Game over!");
-                    score -= 1000;
-                    lose = true;
+                    if (map[x][y].contains("P") || W[x][y]!="no"){
+                        System.out.println("Game over!");
+                        score -= 1000;
+                        lose = true;
+                    }
                 } else if (map[x][y].contains("Y")){
                     actuator("Grab");
                     System.out.println("Found gold!");
@@ -513,9 +597,30 @@ public class Main {
             if (y-1 >= 0) P[x][y-1] = "no";
             if (y+1 < height) P[x][y+1] = "no";
         }
+        if (!foundWumpus)
         if (map[x][y] != null && map[x][y].contains("S")) {
             System.out.println("Smell sensed");
             KB[x][y][1]="Smelly";
+            int unCnt = 0;
+            int unX = -1;
+            int unY = -1;
+            for (int i = 0; i < width; i++)
+                for (int j = 0; j < height; j++)
+                    if ((i==x+1 && j==y) || (i==x-1 && j==y) || (i==x && j==y+1) || (i==x && j==y-1)){
+                        if (W[i][j] == "uncertian" || W[i][j]==null){
+                            W[i][j] = "uncertian";
+                            unCnt++;
+                            unX=i;
+                            unY=j;
+                        }
+                    } else {
+                        W[i][j] = "no";
+                    }
+            if (unCnt==1){
+                W[unX][unY]="yes";
+                System.out.println("Found out Wumpus is on field ("+unX+", "+unY+")");
+                foundWumpus=true;
+            }
         } else {
             if (x-1 >= 0) W[x-1][y] = "no";
             if (x+1 < width) W[x+1][y] = "no";
@@ -574,67 +679,38 @@ public class Main {
 
                     if (foundWumpus) continue;
                     if (KB[i][j][1]=="Smelly") {
-                        int unCnt = 0;
-                        int unX = -1;
-                        int unY = -1;
-                        for (int X = 0; X < width; X++)
-                            for (int Y = 0; Y < height; Y++)
-                                if ((i+1==X && j==Y) || (i-1==X && j==Y) || (i==X && j+1==Y) || (i==X && j-1==Y)){
-                                    if (W[X][Y] == "uncertian"){
-                                        unCnt++;
-                                        unX = X;
-                                        unY = Y;
-                                    } else if (W[X][Y] != "no"){
-                                        W[X][Y] = "uncertian";
-                                    }
-                                } else {
-                                    W[X][Y] = "no";
-                                }
-                        if (unCnt == 1){
-                            W[unX][unY] = "yes";
-                            foundWumpus = true;
-                            continue;
-                        }
-
-
                         int wCount = 0;
                         int wX = 0;
                         int wY = 0;
                         if (i - 1 >= 0) {
-                            if (W[i - 1][j] == null) {
+                            if (W[i - 1][j] != "no") {
                                 wCount++;
                                 wX = i - 1;
                                 wY = j;
                             }
                         }
                         if (i + 1 < width) {
-                            if (W[i + 1][j] == null) {
+                            if (W[i + 1][j] != "no") {
                                 wCount++;
                                 wX = i + 1;
                                 wY = j;
                             }
                         }
                         if (j - 1 >= 0) {
-                            if (W[i][j - 1] == null) {
+                            if (W[i][j - 1] != "no") {
                                 wCount++;
                                 wX = i;
                                 wY = j - 1;
                             }
                         }
                         if (j + 1 < height) {
-                            if (W[i][j + 1] == null) {
+                            if (W[i][j + 1] != "no") {
                                 wCount++;
                                 wX = i;
                                 wY = j + 1;
                             }
                         }
                         if (wCount == 1 && W[wX][wY] != "yes"){
-                            if (x == 1 && y == 2 && i == 1 && j == 2){
-                                System.out.println("Left: "+W[i-1][j]);
-                                System.out.println("Right: "+W[i+1][j]);
-                                System.out.println("Up: "+W[i][j+1]);
-                                System.out.println("Down: "+W[i][j-1]);
-                            }
                             System.out.println("Found out Wumpus is on field ("+wX+", "+wY+")");
                             for (int X = 0; X < width; X++)
                                 for (int Y = 0; Y < height; Y++)
