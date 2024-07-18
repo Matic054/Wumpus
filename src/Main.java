@@ -5,30 +5,42 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class Main {
-    static int width;
-    static int height;
-    static String [][] map;
-    static  String [][] W;
-    static  String [][] P;
-
-    static String[][][] KB;
-    static int direction = 1;
-
-    static boolean [][] explored;
-    static int [][] costs;
-    static boolean foundWumpus = false;
-
-    static int score = 0;
-    static boolean lose = false;
-    static boolean shotArrow = false;
-
+    // size of the map
+    static int width, height;
+    // the agents coordiantes
     static int x,y;
+    // the coordiantes of the goal state
     static int goalX,goalY;
-
+    // var that indicates direction: 1=right, 2=up, -1=left, -2=down
+    static int direction = 1;
+    // a representation of the wumpus world that is read from the .txt files
+    static String [][] map;
+    // agents knowledge of the location of the wumpus, takes values 'yes', 'no', and 'uncertain'
+    static  String [][] W;
+    // the same as W but for pits
+    static  String [][] P;
+    // the breeze, smelly, glitter that the agent experiances get passed to KB so that they can be used for future reasoning
+    static String[][][] KB;
+    // to indicate which positions have been explored and which not
+    static boolean [][] explored;
+    // the costs associated to the positions: inf if the positions has Wumpus, pit, or uncertain status, Manhattan distance otherwise
+    static int [][] costs;
+    // to indicate if Wumpus if already located or not
+    static boolean foundWumpus = false;
+    // score of the player
+    static int score = 0;
+    // to indicate if the player dies
+    static boolean lose = false;
+    // to indicate if the arrow has been shot or not
+    static boolean shotArrow = false;
+    // set to true if you want the map to get printed (to the console) at each step
+    static boolean printMap = false;
+    // to keep track of the players moves so that backtracking is possible
     static ArrayList<String> trace = new ArrayList<>();
     public static void main(String[] args) {
-        ArrayList<String> t = new ArrayList<>();
-        String filePath = "wumpus_world.txt";
+        // solvable worlds: wumpus_world2, wumpus_world3
+        // unsolvable worlds: wumpus_world, wumpus_world4
+        String filePath = "wumpus_world3.txt";
         BufferedReader reader = null;
         try {
             FileReader fileReader = new FileReader(filePath);
@@ -96,12 +108,7 @@ public class Main {
         Tell(x,y);
         W[x][y] = "no";
         P[x][y] = "no";
-        System.out.println("Agent is at field ("+x+", "+y+")");
-        traversal();
-        System.out.println();
-        System.out.println("The trace of the agent: "+trace);
-        System.out.println("The players score was: "+score);
-
+        // print out the initial map
         for (int j = height-1; j >= 0; j--) {
             for (int i = 0; i < width; i++) {
                 if (i==x && j == y)
@@ -121,33 +128,25 @@ public class Main {
             }
             System.out.println();
         }
-
-        System.out.println(foundWumpus);
-
-        for (int j = height-1; j >= 0; j--) {
-            for (int i = 0; i < width; i++) {
-                if (W[i][j] != null && W[i][j]=="yes")
-                    System.out.print(" W ");
-                else if (W[i][j] != null && W[i][j]=="no")
-                    System.out.print(" X ");
-                else if (W[i][j] == "uncertian")
-                    System.out.print(" ? ");
-                else
-                    System.out.println(" _ ");
-            }
-            System.out.println();
-        }
-
+        System.out.println("Agent is at field ("+(x+1)+", "+(y+1)+")");
+        // start the exploration of the map
+        traversal();
+        System.out.println();
+        System.out.println("The players score was: "+score);
     }
 
+    // the greedy - DFS algorithm to search the map
     public static void traversal(){
         if (x == goalX && y == goalY) {
+            System.out.println();
             System.out.println("The agent reached the exit.");
             return;
         } else if (lose){
+            System.out.println();
             System.out.println("The agent died :(");
             return;
         }
+        // values to find the best possible next move
         int costRight = Integer.MAX_VALUE;
         int costLeft = Integer.MAX_VALUE;
         int costUp = Integer.MAX_VALUE;
@@ -200,7 +199,7 @@ public class Main {
                     break;
             }
         }
-
+        // if no no valid move available shoot the Wumpus if possible
         if (costRight == costLeft && costLeft == costDown && costDown == costUp && (costRight == Integer.MAX_VALUE) && foundWumpus && !shotArrow) {
             int wX = 0;
             int wY = 0;
@@ -237,7 +236,7 @@ public class Main {
                 else if (wX == x - 1) costLeft = costs[wX][wY];
             }
         }
-
+        // if no move available start backtracking until you find a valid move, or if you reach the initial position indicate that there is no way certain way to reach the goal, otherwise take the best available move
         if (costRight == costLeft && costLeft == costDown && costDown == costUp && (costRight == Integer.MAX_VALUE)){
             System.out.println("Started backtracking");
             ArrayList<String> backtrack = new ArrayList<>(trace);
@@ -389,6 +388,7 @@ public class Main {
                     break;
                 }
                 if (backtrack.size() == 0) {
+                    System.out.println();
                     System.out.println("Unsolvable");
                     return;
                 }
@@ -464,6 +464,8 @@ public class Main {
         }
         traversal();
     }
+
+    // executes the agents moves and updates the games state accordingly
     static void actuator(String action){
         trace.add(action);
         switch (action){
@@ -505,28 +507,29 @@ public class Main {
                         return;
                     }
                 }
-                System.out.println("Move to field ("+x+", "+y+")");
-                if (y > height-1) System.out.println(trace);
-                for (int j = height-1; j >= 0; j--) {
-                    for (int i = 0; i < width; i++) {
-                        if (i==x && j == y)
-                            System.out.print(" A ");
-                        else if (map[i][j] != null && map[i][j].contains("W"))
-                            System.out.print(" W ");
-                        else if (map[i][j] != null && map[i][j].contains("P"))
-                            System.out.print(" P ");
-                        else if (map[i][j] != null && map[i][j].contains("B"))
-                            System.out.print(" B ");
-                        else if (i == goalX && j == goalY)
-                            System.out.print(" G ");
-                        else if (map[i][j] != null && map[i][j].contains("Y"))
-                            System.out.print(" Y ");
-                        else
-                            System.out.print(" _ ");
+                System.out.println("Move to field ("+(x+1)+", "+(y+1)+")");
+                if (printMap)
+                    for (int j = height-1; j >= 0; j--) {
+                        for (int i = 0; i < width; i++) {
+                            if (i==x && j == y)
+                                System.out.print(" A ");
+                            else if (map[i][j] != null && map[i][j].contains("W"))
+                                System.out.print(" W ");
+                            else if (map[i][j] != null && map[i][j].contains("P"))
+                                System.out.print(" P ");
+                            else if (map[i][j] != null && map[i][j].contains("B"))
+                                System.out.print(" B ");
+                            else if (i == goalX && j == goalY)
+                                System.out.print(" G ");
+                            else if (map[i][j] != null && map[i][j].contains("Y"))
+                                System.out.print(" Y ");
+                            else
+                                System.out.print(" _ ");
+                        }
+                        System.out.println();
                     }
-                    System.out.println();
-                }
                 if (!explored[x][y]) explored[x][y] = true;
+                // update knowledge based on the information gained in the new position
                 Tell(x,y);
                 score--;
                 if (map[x][y] != null)
@@ -587,6 +590,8 @@ public class Main {
                 break;
         }
     }
+
+    // update knowledge based on the new information and perform inference using resolution and the fact that there is only one Wumpus
     static void Tell(int x, int y){
         if (map[x][y] != null && map[x][y].contains("B")) {
             System.out.println("Breeze sensed");
@@ -618,7 +623,7 @@ public class Main {
                     }
             if (unCnt==1){
                 W[unX][unY]="yes";
-                System.out.println("Found out Wumpus is on field ("+unX+", "+unY+")");
+                System.out.println("Found out Wumpus is on field ("+(unX+1)+", "+(unY+1)+")");
                 foundWumpus=true;
             }
         } else {
@@ -673,7 +678,7 @@ public class Main {
                         }
                     }
                     if (pitCount==1 && P[pitX][pitY] != "yes"){
-                        System.out.println("Found out pit is on field ("+pitX+", "+pitY+")");
+                        System.out.println("Found out pit is on field ("+(pitX+1)+", "+(pitY+1)+")");
                         P[pitX][pitY] = "yes";
                     }
 
@@ -711,7 +716,7 @@ public class Main {
                             }
                         }
                         if (wCount == 1 && W[wX][wY] != "yes"){
-                            System.out.println("Found out Wumpus is on field ("+wX+", "+wY+")");
+                            System.out.println("Found out Wumpus is on field ("+(wX+1)+", "+(wY+1)+")");
                             for (int X = 0; X < width; X++)
                                 for (int Y = 0; Y < height; Y++)
                                     W[X][Y] = "no";
@@ -727,6 +732,8 @@ public class Main {
             for (int j = 0; j < height; j++)
                 if (W[i][j] == "no" && P[i][j] == "no") costs[i][j] = Math.abs(goalX-i)+Math.abs(goalY-j);
     }
+
+    // simply query the W and P to check if a position is safe
     static String ASK(int x,int y){
         if (P[x][y]=="yes" || W[x][y]=="yes") return "no";
         if (P[x][y]=="no" && W[x][y]=="no") return "yes";
